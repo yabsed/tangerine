@@ -8,10 +8,17 @@ import { useTranslation } from '@/shared/i18n';
 import { useLogin } from '../hooks/useLogin';
 import { loginSchema, type LoginForm } from '../api/schemas';
 import { Alert, Anchor, Box, Flex, Stack, Text, Title } from '@mantine/core';
+import { useQuery } from '@tanstack/react-query';
+import client from '@/shared/api/client';
 
 export default function Login() {
   const { login, serverError } = useLogin();
   const t = useTranslation();
+  const { data: providers } = useQuery({
+    queryKey: ['auth', 'providers'],
+    queryFn: async () => (await client.get<{ google: boolean }>('/api/auth/providers')).data,
+    staleTime: 60000,
+  });
 
   const {
     register,
@@ -65,14 +72,14 @@ export default function Login() {
           </Stack>
         </form>
 
-        <Button
+        {providers?.google && <Button
           onClick={() => (window.location.href = authApi.getGoogleLoginUrl())}
           variant="outline"
           fullWidth
           leftSection={<GoogleIcon />}
         >
           {t.auth.continueWithGoogle}
-        </Button>
+        </Button>}
 
         <Text size="sm" c="dimmed" ta="center">
           {t.auth.noAccount}{' '}

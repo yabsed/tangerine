@@ -11,7 +11,6 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
-  // Vercel 배포 시에는 보통 '/'를 사용합니다.
   base: '/23-5-team9-web/',
   server: {
     watch: {
@@ -19,8 +18,9 @@ export default defineConfig({
     },
     proxy: {
       '/api': {
-        target: 'https://dev.server.team9-toy-project.p-e.kr',
+        target: 'http://localhost:8000',
         changeOrigin: true,
+        ws: true,
       },
     },
   },

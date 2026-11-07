@@ -13,6 +13,7 @@ import { useTranslation } from '@/shared/i18n';
 import { Box, Container, Paper, Stack } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import { useVisualViewportHeight } from '@/shared/hooks/useVisualViewportHeight';
+import { useChatSocket } from '@/features/chat/hooks/useChatSocket';
 
 function ChatRoom() {
   const t = useTranslation();
@@ -30,7 +31,8 @@ function ChatRoom() {
   });
 
   const { room: roomInfo } = useChatRoom(chatId);
-  const { messages, isLoading: loading, error } = useMessages(chatId, { refetchInterval: POLLING_CONFIG.CHAT_ROOM_PAGE });
+  const { messages, isLoading: loading, error } = useMessages(chatId);
+  useChatSocket(chatId);
   const sendMessageMutation = useSendMessage(chatId || '');
   const markAsReadMutation = useMarkAsRead(chatId || '');
 

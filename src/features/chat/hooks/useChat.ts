@@ -102,7 +102,8 @@ export function useSendMessage(roomId: string) {
       // 메시지 목록에 새 메시지 추가 (optimistic update 대신 캐시 직접 업데이트)
       queryClient.setQueryData<Message[]>(
         chatKeys.messages(roomId),
-        (old) => (old ? [...old, newMessage] : [newMessage])
+        (old = []) => [...old.filter(message => message.id !== newMessage.id), newMessage]
+          .sort((a, b) => a.id - b.id)
       );
       // 채팅방 목록도 갱신 (last_message 업데이트를 위해)
       queryClient.invalidateQueries({ queryKey: chatKeys.rooms() });
