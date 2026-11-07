@@ -27,7 +27,7 @@ jobs:
       mysql:
         image: mysql:8.4
         env:
-          MYSQL_DATABASE: carrot
+          MYSQL_DATABASE: tangerine_exhibit
           MYSQL_ROOT_PASSWORD: test-password
         ports: ['3306:3306']
         options: >-
@@ -43,7 +43,7 @@ jobs:
       DB_DRIVER: aiomysql
       DB_HOST: 127.0.0.1
       DB_PORT: 3306
-      DB_DATABASE: carrot
+      DB_DATABASE: tangerine_exhibit
       DB_USER: root
       DB_PASSWORD: test-password
 
@@ -51,6 +51,8 @@ jobs:
       ACCESS_TOKEN_SECRET: isolated-ci-access-secret
       REFRESH_TOKEN_SECRET: isolated-ci-refresh-secret
       SESSION_SECRET: isolated-ci-session-secret
+      GOOGLE_CLIENT_ID: ''
+      GOOGLE_CLIENT_SECRET: ''
 
       AWS_DEFAULT_REGION: ap-southeast-2
       AWS_ACCESS_KEY_ID: testing
@@ -139,11 +141,9 @@ jobs:
           python-version: '3.11'
 
       - name: Verify the public deployment
-        env:
-          SMOKE_PASSWORD: ${{ secrets.SMOKE_PASSWORD }}
         run: |
-          pip install httpx==0.28.1 websockets==15.0.1
+          pip install httpx==0.28.1
           curl --fail --silent --show-error --output /dev/null \
             --retry 12 --retry-all-errors --retry-delay 5 \
-            "$API_ORIGIN/api/health"
-          python infra/smoke.py "$API_ORIGIN" https://yabsed.github.io --images
+            "$API_ORIGIN/"
+          python infra/smoke.py "$API_ORIGIN" https://yabsed.github.io

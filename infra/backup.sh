@@ -13,7 +13,7 @@ backup=$(mktemp)
 trap 'rm -f "$backup"' EXIT
 
 docker compose exec -T db sh -c \
-    'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" mysqldump -uroot --single-transaction --no-tablespaces carrot' \
+    'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" mysqldump -uroot --single-transaction --no-tablespaces tangerine_exhibit' \
     | gzip > "$backup"
 
 docker compose run --rm -T --no-deps api python infra/backup.py < "$backup"

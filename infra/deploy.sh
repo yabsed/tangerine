@@ -26,6 +26,9 @@ if ! docker compose run --rm --no-deps api alembic upgrade head; then
     exit 1
 fi
 
+docker compose exec -T db sh -c \
+    'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" mysql -uroot tangerine_exhibit' < init.sql
+
 docker compose up -d --no-deps --wait api
 docker compose up -d --no-recreate caddy
 docker compose exec -T caddy caddy reload --config /etc/caddy/Caddyfile

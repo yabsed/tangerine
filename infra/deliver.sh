@@ -24,7 +24,7 @@ ssh_options=(
 
 # Deliver configuration; replace the environment file atomically.
 scp "${ssh_options[@]}" \
-    infra/compose.yaml infra/Caddyfile infra/deploy.sh infra/backup.sh \
+    infra/compose.yaml infra/Caddyfile infra/deploy.sh infra/backup.sh infra/init.sql \
     "$target:/opt/dangeun/"
 
 scp "${ssh_options[@]}" "$work/production.env" "$target:/opt/dangeun/.env.next"

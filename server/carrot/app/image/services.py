@@ -1,3 +1,5 @@
+import os
+
 import boto3
 import uuid
 
@@ -7,7 +9,7 @@ from carrot.app.image.models import Image
 from carrot.app.image.exceptions import FileUploadFailedException
 from carrot.app.image.repositories import ImageRepository
 
-BUCKET_NAME = "team9-image-database"
+BUCKET_NAME = os.environ["S3_IMAGE_BUCKET"]
 s3_client = boto3.client("s3")
 
 
@@ -19,7 +21,7 @@ class ImageService:
     async def upload_image(self, file) -> Image:
         image_id = str(uuid.uuid4())
         file_extension = file.filename.split(".")[-1]
-        s3_filename = f"{image_id}.{file_extension}"
+        s3_filename = f"images/{image_id}.{file_extension}"
 
         try:
             s3_client.upload_fileobj(
@@ -28,7 +30,7 @@ class ImageService:
                 s3_filename,
                 ExtraArgs={"ContentType": file.content_type},
             )
-            file_url = f"https://{BUCKET_NAME}.s3.ap-northeast-2.amazonaws.com/{s3_filename}"
+            file_url = f"https://{BUCKET_NAME}.s3.{s3_client.meta.region_name}.amazonaws.com/{s3_filename}"
         except Exception:
             raise FileUploadFailedException
 

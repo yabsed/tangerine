@@ -12,14 +12,14 @@ export default defineConfig({
     },
   },
   // Vercel 배포 시에는 보통 '/'를 사용합니다.
-  base: '/23-5-team9-web/',
+  base: '/tangerine/',
   server: {
     watch: {
       usePolling: true,
     },
     proxy: {
       '/api': {
-        target: 'https://dev.server.team9-toy-project.p-e.kr',
+        target: 'http://localhost:8000',
         changeOrigin: true,
       },
     },
