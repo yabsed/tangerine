@@ -54,7 +54,10 @@ def image_content(image_id: uuid.UUID):
         raise HTTPException(status_code=404, detail="Image not found.")
 
     def chunks():
-        with response["Body"] as body:
+        body = response["Body"]
+        try:
             yield from body.iter_chunks(64 * 1024)
+        finally:
+            body.close()
 
     return chunks(), response["ContentType"]
