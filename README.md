@@ -11,7 +11,9 @@ GitHub Pages → 브라우저 → HTTPS / WSS → Lightsail
                                         FastAPI (worker 1)
                                         MySQL (영구 볼륨)
                                           ↓
-                                        S3 (이미지·DB 백업)
+                                        S3 (비공개 DB 백업)
+
+브라우저 → S3 이미지 전용 버킷 (이미지 파일 직접 조회)
 ```
 
 각 저장소의 `main` push가 해당 서비스만 배포한다. 루트 저장소에는 통합 CD를 두지 않는다.
