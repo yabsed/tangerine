@@ -4,8 +4,11 @@
 PR에서는 타입 검사와 빌드까지만 수행한다.
 
 - 공개 주소: https://yabsed.github.io/23-5-team9-web/
+- 현재 API: https://54-253-247-152.sslip.io
 - Settings → Pages → Source: GitHub Actions
 - Repository Variable `VITE_API_ORIGIN`: API의 HTTPS origin
+
+수동 재배포는 `gh workflow run deploy.yml --repo yabsed/23-5-team9-web --ref main`으로 실행한다.
 
 `VITE_*`는 브라우저에 공개된다. 비밀 값은 넣지 않는다.
 WebSocket 주소와 Google 로그인 주소도 같은 API origin에서 만든다.
