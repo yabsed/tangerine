@@ -3,13 +3,15 @@ import { Outlet } from 'react-router-dom';
 import { NavBar } from '@/shared/ui';
 import { OnboardingBanner } from '../../features/auth/components/OnboardingBanner';
 import { useUser } from '@/features/user/hooks/useUser';
+import { useChatNotifications } from '@/features/chat/hooks/useChatNotifications';
 import { Box } from '@mantine/core';
 import { APP_Z_INDEX } from '@/shared/ui/theme/zIndex';
 
 const SCROLL_THRESHOLD = 10;
 
 export function MainLayout() {
-  const { isLoggedIn } = useUser();
+  const { isLoggedIn, needsOnboarding } = useUser();
+  useChatNotifications(isLoggedIn && !needsOnboarding);
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const lastScrollY = useRef(0);
 

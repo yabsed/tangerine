@@ -10,9 +10,8 @@ import MessageList from '@/features/chat/components/MessageList';
 import ChatInput from '@/features/chat/components/ChatInput';
 import { useTranslation } from '@/shared/i18n';
 import { Box, Container, Paper, Stack } from '@mantine/core';
-import { useMediaQuery } from '@mantine/hooks';
+import { useDocumentVisibility, useMediaQuery } from '@mantine/hooks';
 import { useVisualViewportHeight } from '@/shared/hooks/useVisualViewportHeight';
-import { useChatSocket } from '@/features/chat/hooks/useChatSocket';
 
 function ChatRoom() {
   const t = useTranslation();
@@ -20,6 +19,7 @@ function ChatRoom() {
   const navigate = useNavigate();
   const viewportHeight = useVisualViewportHeight();
   const isMdUp = useMediaQuery('(min-width: 768px)');
+  const visibility = useDocumentVisibility();
   const [showTransferMenu, setShowTransferMenu] = useState(false);
   
   const heightStyle = typeof viewportHeight === 'number' 
@@ -29,9 +29,12 @@ function ChatRoom() {
 
   const { room: roomInfo } = useChatRoom(chatId);
   const { messages, isLoading: loading, error } = useMessages(chatId);
-  useChatSocket(chatId);
   const sendMessageMutation = useSendMessage(chatId || '');
-  const markAsReadMutation = useMarkAsRead(chatId || '');
+  const { mutate: markAsRead } = useMarkAsRead(chatId || '');
+  const unreadMessages = messages.filter(
+    message => !message.is_read && message.sender_id !== user?.id,
+  );
+  const lastUnreadId = unreadMessages[unreadMessages.length - 1]?.id;
 
   const { profile: opponentProfile } = useUserProfile(roomInfo?.opponent_id);
   const { transactions } = useTransactions({
@@ -45,10 +48,10 @@ function ChatRoom() {
   }, [userLoading, isLoggedIn, navigate]);
 
   useEffect(() => {
-    if (chatId && isLoggedIn && messages.length > 0) {
-      markAsReadMutation.mutate();
+    if (chatId && isLoggedIn && lastUnreadId && visibility === 'visible') {
+      markAsRead();
     }
-  }, [chatId, isLoggedIn, messages.length]);
+  }, [chatId, isLoggedIn, lastUnreadId, visibility, markAsRead]);
 
   const handleSend = (content: string) => {
     if (!chatId || sendMessageMutation.isPending) return;

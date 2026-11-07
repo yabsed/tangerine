@@ -10,11 +10,12 @@ from carrot.db.connection import get_db_session
 from carrot.app.auth.utils import login_with_header
 from carrot.app.user.models import User
 
-from carrot.app.chat.websocket import websocket_endpoint
+from carrot.app.chat.websocket import notifications_endpoint, websocket_endpoint
 from carrot.app.chat.manager import manager
 
 
 chat_router = APIRouter()
+chat_router.add_api_websocket_route("/ws", notifications_endpoint)
 chat_router.add_api_websocket_route("/ws/{room_id}", websocket_endpoint)
 
 
@@ -48,8 +49,6 @@ async def send_message(
     db: AsyncSession = Depends(get_db_session, scope="function")
 ):
     new_msg = await chat_service.save_new_message(db, room_id, current_user.id, msg_in.content)
-    payload = MessageRead.model_validate(new_msg).model_dump(mode="json")
-    await manager.broadcast_to_room(room_id, payload)
     return new_msg
 
 ### 4. 메시지 내역 및 업데이트 확인

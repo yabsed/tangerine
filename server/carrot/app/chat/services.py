@@ -4,6 +4,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, or_, and_, update, desc, func
 
 from carrot.app.chat.models import ChatRoom, ChatMessage, User, GroupChatRoom, GroupChatMember
+from carrot.app.chat.manager import manager
+from carrot.app.chat.schemas import MessageRead
 from carrot.app.chat.utils import (
     get_unread_count_subquery, 
     get_last_message_id_subquery, 
@@ -103,24 +105,25 @@ class ChatService:
         sender_id: str, 
         content: str
     ) -> ChatMessage:
-        # 해당 방(1:1 혹은 그룹)에 유저가 접근 권한이 있는지 먼저 확인
-        await self.validate_room_access(db, room_id, sender_id)
+        room = await self.validate_room_access(db, room_id, sender_id)
 
-        # 1:1 방인지 그룹 방인지 판별하여 필드 할당 (UUID 패턴 등으로 구분하거나 DB 확인)
-        # 여기서는 간단하게 두 컬럼 모두 room_id를 넣어보고, DB 구조에 맞게 할당되도록 구성합니다.
-        # 실제로는 validate_room_access에서 방의 타입을 반환받아 처리하는 것이 가장 정확합니다.
-        
-        # 임시 로직: 1:1 방 테이블에 없으면 그룹방으로 간주 (또는 그 반대)
-        is_group = await self._check_if_group_room(db, room_id)
-
-        if is_group:
-            new_msg = ChatMessage(group_room_id=room_id, sender_id=sender_id, content=content)
-        else:
+        if isinstance(room, ChatRoom):
             new_msg = ChatMessage(room_id=room_id, sender_id=sender_id, content=content)
-            
+            user_ids = {room.user_one_id, room.user_two_id}
+        else:
+            new_msg = ChatMessage(group_room_id=room_id, sender_id=sender_id, content=content)
+            members = await db.scalars(
+                select(GroupChatMember.user_id).where(GroupChatMember.room_id == room_id)
+            )
+            user_ids = set(members)
+
         db.add(new_msg)
         await db.commit()
         await db.refresh(new_msg)
+
+        # Notify only after the message is committed and can be fetched by clients.
+        payload = MessageRead.model_validate(new_msg).model_dump(mode="json")
+        await manager.broadcast_to_room(room_id, payload, user_ids)
         return new_msg
 
     ### 4. 메시지 조회 (통합)
@@ -171,11 +174,7 @@ class ChatService:
         
         await db.execute(stmt)
         await db.commit()
-
-    # 헬퍼 함수: 방 타입 체크
-    async def _check_if_group_room(self, db: AsyncSession, room_id: str) -> bool:
-        result = await db.execute(select(GroupChatRoom).where(GroupChatRoom.id == room_id))
-        return result.scalar_one_or_none() is not None
+        await manager.notify_users({user_id}, {"type": "read", "room_id": room_id})
 
     ### 6. 상대방 상태 확인
     async def get_chat_partner_status(self, 

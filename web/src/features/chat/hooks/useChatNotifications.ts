@@ -7,12 +7,12 @@ import { chatKeys } from './useChat';
 import { userKeys } from '@/features/user/hooks/useUser';
 import { transactionKeys } from '@/features/pay/hooks/useTransactions';
 
-export function useChatSocket(roomId: string | undefined) {
+export function useChatNotifications(enabled: boolean) {
   const queryClient = useQueryClient();
   const token = useAuthStore(state => state.token);
 
   useEffect(() => {
-    if (!roomId || !token) return;
+    if (!enabled || !token) return;
 
     let stopped = false;
     let attempt = 0;
@@ -31,24 +31,27 @@ export function useChatSocket(roomId: string | undefined) {
         await client.get('/api/user/me');
         if (stopped) return;
 
-        socket = new WebSocket(chatSocketUrl(roomId!));
+        socket = new WebSocket(chatSocketUrl());
         socket.onopen = () => {
           socket?.send(JSON.stringify({ token: useAuthStore.getState().token }));
         };
         socket.onmessage = event => {
-          const { type } = JSON.parse(event.data);
+          if (stopped) return;
+          const { type, room_id: roomId } = JSON.parse(event.data);
           attempt = 0;
 
-          // "ready" also refreshes transfers missed while disconnected.
+          // Reconnects fetch the current state, including events missed offline.
           if (type === 'ready' || type === 'transfer') {
             void queryClient.invalidateQueries({ queryKey: userKeys.me() });
             void queryClient.invalidateQueries({ queryKey: transactionKeys.all });
           }
 
-          if (type === 'transfer') return;
-
-          void queryClient.invalidateQueries({ queryKey: chatKeys.messages(roomId!) });
-          void queryClient.invalidateQueries({ queryKey: chatKeys.rooms() });
+          if (type === 'ready') {
+            void queryClient.invalidateQueries({ queryKey: chatKeys.all });
+          } else if (type === 'message' || type === 'read') {
+            void queryClient.invalidateQueries({ queryKey: chatKeys.messages(roomId) });
+            void queryClient.invalidateQueries({ queryKey: chatKeys.rooms() });
+          }
         };
         socket.onclose = event => {
           if (event.code !== 4003) retry();
@@ -64,5 +67,5 @@ export function useChatSocket(roomId: string | undefined) {
       clearTimeout(timer);
       socket?.close();
     };
-  }, [roomId, token, queryClient]);
+  }, [enabled, token, queryClient]);
 }

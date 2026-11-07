@@ -19,22 +19,16 @@ export const chatKeys = {
 };
 
 interface UseChatRoomsOptions {
-  refetchInterval?: number | false;
   enabled?: boolean;
 }
 
 export function useChatRooms(options: UseChatRoomsOptions = {}) {
-  const { refetchInterval = false, enabled = true } = options;
+  const { enabled = true } = options;
 
   const { data: rooms, isLoading, error, refetch } = useQuery({
     queryKey: chatKeys.rooms(),
     queryFn: fetchChatRooms,
     staleTime: POLLING_CONFIG.STALE_TIME.CHAT_ROOMS,
-    refetchInterval: (query) => {
-      // 에러가 발생했을 때는 폴링 중단
-      if (query.state.error) return false;
-      return refetchInterval;
-    },
     enabled,
     retry: 2, // 네트워크 오류 등을 위해 2회 재시도
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
@@ -59,19 +53,12 @@ export function useChatRoom(roomId: string | undefined) {
   return { room, isLoading };
 }
 
-interface UseMessagesOptions {
-  refetchInterval?: number | false;
-}
-
-export function useMessages(roomId: string | undefined, options: UseMessagesOptions = {}) {
-  const { refetchInterval = false } = options;
-
+export function useMessages(roomId: string | undefined) {
   const { data: messages, isLoading, error, refetch } = useQuery({
     queryKey: chatKeys.messages(roomId || ''),
     queryFn: () => fetchMessages(roomId!),
     enabled: !!roomId,
     staleTime: POLLING_CONFIG.STALE_TIME.CHAT_MESSAGES,
-    refetchInterval,
   });
 
   return {

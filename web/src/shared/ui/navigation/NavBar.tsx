@@ -6,7 +6,6 @@ import { useTranslation } from '@/shared/i18n';
 import { useChatRooms } from '@/features/chat/hooks/useChat';
 import { Button } from '../display/Button';
 import { Badge } from '../feedback';
-import { POLLING_CONFIG, getPollingInterval } from '@/shared/config/polling';
 import { useProductFiltersStore } from '@/features/product/store/productFiltersStore';
 import {
   ActionIcon,
@@ -35,9 +34,7 @@ export default function NavBar({ isLoggedIn }: { isLoggedIn: boolean }) {
     { id: 'chat', label: t.nav.chat, path: '/chat' },
   ];
 
-  // 로그인 상태일 때 읽지 않은 메시지 수 폴링 (React Query handles caching & deduplication)
   const { totalUnreadCount } = useChatRooms({
-    refetchInterval: getPollingInterval(POLLING_CONFIG.UNREAD_COUNT, isLoggedIn),
     enabled: isLoggedIn,
   });
 
@@ -53,27 +50,28 @@ export default function NavBar({ isLoggedIn }: { isLoggedIn: boolean }) {
   const NavItem = ({ label, path, mobile = false }: { label: string, path: string, mobile?: boolean }) => {
     const isActive = pathname.startsWith(path);
     const isChat = path === '/chat';
-    const showBadge = isChat && totalUnreadCount > 0;
+    const showBadge = isChat && isLoggedIn && totalUnreadCount > 0;
 
     return (
       <Button
         onClick={() => handleNav(path)}
         variant="ghost"
         fullWidth={mobile}
+        rightSection={showBadge && (
+          <span aria-live="polite">
+            <Badge variant="notification">
+              {totalUnreadCount > 99 ? '99+' : totalUnreadCount}
+            </Badge>
+          </span>
+        )}
         style={{
           textAlign: mobile ? 'left' : undefined,
           fontSize: mobile ? 'var(--mantine-font-size-lg)' : undefined,
           color: isActive ? 'var(--color-brand-nav)' : 'var(--text-body)',
           fontWeight: isActive ? 700 : 500,
-          gap: 8,
         }}
       >
         {label}
-        {showBadge && (
-          <Badge variant="notification">
-            {totalUnreadCount > 99 ? '99+' : totalUnreadCount}
-          </Badge>
-        )}
       </Button>
     );
   };
