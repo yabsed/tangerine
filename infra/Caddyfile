@@ -1,0 +1,7 @@
+{$PUBLIC_API_URL} {
+    request_body {
+        max_size 6MB
+    }
+
+    reverse_proxy api:8000
+}

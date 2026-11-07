@@ -48,7 +48,7 @@ def run_migrations_offline() -> None:
 
 def run_migrations_online() -> None:
     """Run migrations in 'online' mode."""
-    connectable = create_engine(sync_url, poolclass=pool.NullPool)  # ✅ 여기
+    connectable = create_engine(sync_url, poolclass=pool.NullPool, hide_parameters=True)  # ✅ 여기
 
     with connectable.connect() as connection:
         context.configure(

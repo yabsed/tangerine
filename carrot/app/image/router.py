@@ -1,16 +1,24 @@
 from typing import Annotated
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, UploadFile
+from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from carrot.app.auth.utils import partial_login_with_header
 from carrot.db.connection import get_session_factory
 from carrot.app.image.schemas import ImageResponse
-from carrot.app.image.services import ImageService
+from carrot.app.image.services import ImageService, image_content
 
 image_router = APIRouter()
 
 
-@image_router.post("/product", status_code=201, response_model=ImageResponse)
+@image_router.post(
+    "/product",
+    status_code=201,
+    response_model=ImageResponse,
+    dependencies=[Depends(partial_login_with_header)],
+)
 async def upload_product_image(
     session: Annotated[AsyncSession, Depends(get_session_factory)],
     file: UploadFile = File(...),
@@ -21,7 +29,12 @@ async def upload_product_image(
     return ImageResponse.model_validate(image)
 
 
-@image_router.post("/user", status_code=201, response_model=ImageResponse)
+@image_router.post(
+    "/user",
+    status_code=201,
+    response_model=ImageResponse,
+    dependencies=[Depends(partial_login_with_header)],
+)
 async def upload_profile_image(
     session: Annotated[AsyncSession, Depends(get_session_factory)],
     file: UploadFile = File(...),
@@ -50,3 +63,13 @@ async def view_profile_image(
     service = ImageService(session)
     image = await service.view_image(image_id)
     return ImageResponse.model_validate(image)
+
+
+@image_router.get("/{image_id}/file")
+def get_image_file(image_id: UUID):
+    chunks, content_type = image_content(image_id)
+    return StreamingResponse(
+        chunks,
+        media_type=content_type,
+        headers={"Cache-Control": "public, max-age=86400", "X-Content-Type-Options": "nosniff"},
+    )

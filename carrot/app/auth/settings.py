@@ -4,8 +4,8 @@ from carrot.settings import SETTINGS
 
 
 class AuthSettings(BaseSettings):
-    GOOGLE_CLIENT_ID: str
-    GOOGLE_CLIENT_SECRET: str
+    GOOGLE_CLIENT_ID: str = ""
+    GOOGLE_CLIENT_SECRET: str = ""
     FRONTEND_URL: str
 
     @property

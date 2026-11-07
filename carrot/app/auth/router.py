@@ -71,6 +71,8 @@ def get_redirect_uri(request: Request) -> str:
 
 @auth_router.get("/oauth2/login/google", status_code=status.HTTP_307_TEMPORARY_REDIRECT)
 async def get_redirect_url(request: Request):
+    if not (AUTH_SETTINGS.GOOGLE_CLIENT_ID and AUTH_SETTINGS.GOOGLE_CLIENT_SECRET):
+        raise HTTPException(status_code=503, detail="Google login is not configured.")
     redirect_uri = get_redirect_uri(request)
     auth_data = await google.create_authorization_url(redirect_uri)
     google_auth_url = auth_data.get("url")
@@ -109,3 +111,8 @@ async def receive_code(
         f"?access_token={access_token}&refresh_token={refresh_token}"
     )
     return RedirectResponse(url=redirect_url)
+
+
+@auth_router.get("/providers")
+def auth_providers():
+    return {"google": bool(AUTH_SETTINGS.GOOGLE_CLIENT_ID and AUTH_SETTINGS.GOOGLE_CLIENT_SECRET)}

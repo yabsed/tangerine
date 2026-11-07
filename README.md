@@ -157,3 +157,8 @@ build db
 - 경매 종료 시 자동 낙찰 처리
 - 낙찰자 가상 화폐 결제
 - 거래 기록 생성
+
+
+## 배포
+
+Lightsail·GitHub Actions 운영 절차는 [infra/README.md](infra/README.md)를 참고한다.

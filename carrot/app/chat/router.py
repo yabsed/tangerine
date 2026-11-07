@@ -1,10 +1,6 @@
 from typing import List, Annotated
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_, or_, func, desc
-
-
-from carrot.app.chat.models import GroupChatRoom, ChatRoom, ChatMessage, GroupChatMember
 from carrot.app.chat.schemas import (
     ChatRoomRead, GroupChatCreate, MessageRead, MessageCreate, ChatRoomListRead, OpponentStatus, 
     GroupChatRead, GroupChatMemberRead, GroupChatListRead
@@ -14,109 +10,13 @@ from carrot.db.connection import get_db_session
 from carrot.app.auth.utils import login_with_header
 from carrot.app.user.models import User
 
-# For WebSocket management
-import asyncio
-from fastapi import WebSocket, WebSocketDisconnect
-from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
-
-from carrot.db.connection import get_session_factory
+from carrot.app.chat.websocket import websocket_endpoint
 from carrot.app.chat.manager import manager
-from carrot.app.auth.utils import verify_and_decode_token
-from carrot.app.auth.settings import AUTH_SETTINGS
-
-from carrot.app.auth.exceptions import (
-    InvalidTokenException,
-)
-
 
 
 chat_router = APIRouter()
+chat_router.add_api_websocket_route("/ws/{room_id}", websocket_endpoint)
 
-### WebSocket 엔드포인트
-@chat_router.websocket("/ws/{room_id}")
-async def websocket_endpoint(
-    websocket: WebSocket, 
-    room_id: str,
-    session_factory: async_sessionmaker = Depends(get_session_factory)
-):
-    await websocket.accept()
-    current_user_id = None
-    
-    try:
-        # 1. [인증] 첫 메시지로 토큰 받기
-        try:
-            auth_data = await asyncio.wait_for(websocket.receive_json(), timeout=5.0)
-            token = auth_data.get("token")
-            
-            claims = verify_and_decode_token(token, AUTH_SETTINGS.ACCESS_TOKEN_SECRET)
-            current_user_id = claims.get("sub") 
-            
-            if not current_user_id:
-                raise InvalidTokenException()
-                
-        except (asyncio.TimeoutError, InvalidTokenException, Exception):
-            await websocket.close(code=4003)
-            return
-
-        # 2. 매니저 등록 (기존 매니저 사용 가능)
-        await manager.connect(websocket, room_id)
-
-        # 3. 메인 대화 루프
-        while True:
-            data = await websocket.receive_json()
-            content = data.get("content")
-            
-            async with session_factory() as session:
-                try:
-                    # [핵심 로직] 어느 테이블에 저장할지 결정
-                    # 1:1 방인지 먼저 확인
-                    room_stmt = select(ChatRoom).where(ChatRoom.id == room_id)
-                    is_direct = (await session.execute(room_stmt)).scalar_one_or_none()
-                    
-                    if is_direct:
-                        # 1:1 채팅 메시지 저장
-                        new_msg = ChatMessage(
-                            room_id=room_id, 
-                            sender_id=current_user_id, 
-                            content=content
-                        )
-                    else:
-                        # 그룹 채팅방 멤버인지 확인 후 저장
-                        group_stmt = select(GroupChatMember).where(
-                            and_(GroupChatMember.room_id == room_id, GroupChatMember.user_id == current_user_id)
-                        )
-                        is_member = (await session.execute(group_stmt)).scalar_one_or_none()
-                        
-                        if not is_member:
-                            await websocket.send_json({"error": "이 방의 멤버가 아닙니다."})
-                            continue
-                            
-                        new_msg = ChatMessage(
-                            group_room_id=room_id, # 수정된 모델 필드!
-                            sender_id=current_user_id, 
-                            content=content
-                        )
-
-                    session.add(new_msg)
-                    await session.commit()
-                    await session.refresh(new_msg)
-                    
-                    # 브로드캐스트
-                    await manager.broadcast_to_room(room_id, {
-                        "message_id": new_msg.id,
-                        "sender_id": current_user_id,
-                        "content": new_msg.content,
-                        "created_at": new_msg.created_at.isoformat(),
-                        "is_group": not is_direct # 프론트에서 구분하기 쉽게 추가
-                    })
-
-                except Exception as e:
-                    await session.rollback()
-                    print(f"❌ WS Message Error: {e}")
-                    await websocket.send_json({"error": "메시지 전송 실패"})
-
-    except WebSocketDisconnect:
-        manager.disconnect(websocket, room_id)
 
 ### 1대1 채팅방 관련 API 엔드포인트
 
@@ -148,6 +48,8 @@ async def send_message(
     db: AsyncSession = Depends(get_db_session)
 ):
     new_msg = await chat_service.save_new_message(db, room_id, current_user.id, msg_in.content)
+    payload = MessageRead.model_validate(new_msg).model_dump(mode="json")
+    await manager.broadcast_to_room(room_id, payload)
     return new_msg
 
 ### 4. 메시지 내역 및 업데이트 확인
@@ -156,8 +58,8 @@ async def get_messages(
     room_id: str, 
     # 1. 인증된 유저 객체를 주입받습니다.
     current_user: Annotated[User, Depends(login_with_header)], 
-    last_id: int = 0, 
-    limit: int = 50, 
+    last_id: int = Query(default=0, ge=0),
+    limit: int = Query(default=50, ge=1, le=100),
     db: AsyncSession = Depends(get_db_session)
 ):
     # 2. 서비스 함수에 current_user.id를 인자로 전달합니다.
@@ -243,6 +145,7 @@ async def remove_group_member(
     if target_user_id == current_user.id:
         # 1. 본인이 나가는 경우 (leave_group_room)
         await chat_service.leave_group_room(db, room_id, current_user.id)
+        await manager.remove_user(room_id, current_user.id)
         return {"status": "success", "message": "방에서 나갔습니다."}
     else:
         # 2. 타인을 강퇴하는 경우 (kick_group_member)
@@ -252,6 +155,7 @@ async def remove_group_member(
             target_user_id=target_user_id, 
             admin_user_id=current_user.id
         )
+        await manager.remove_user(room_id, target_user_id)
         return {"status": "success", "message": f"유저 {target_user_id}를 강퇴했습니다."}
 
 ### 5. 내 그룹 채팅방 목록 불러오기

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from datetime import datetime
 from typing import List, Optional
 
@@ -6,7 +6,7 @@ from carrot.app.user.schemas import UserResponse
 
 # 메시지 전송 요청
 class MessageCreate(BaseModel):
-    content: str
+    content: str = Field(min_length=1, max_length=4000)
 
 # 메시지 응답 형식
 class MessageRead(BaseModel):
@@ -16,6 +16,20 @@ class MessageRead(BaseModel):
     content: str
     created_at: datetime
     is_read: bool
+
+    @model_validator(mode="before")
+    @classmethod
+    def group_room_id(cls, value):
+        if hasattr(value, "group_room_id") and value.group_room_id:
+            return {
+                "id": value.id,
+                "room_id": value.group_room_id,
+                "sender_id": value.sender_id,
+                "content": value.content,
+                "created_at": value.created_at,
+                "is_read": value.is_read,
+            }
+        return value
 
     class Config:
         from_attributes = True

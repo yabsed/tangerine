@@ -143,3 +143,8 @@ sonarqube/data
 sonarqube/logs
 
 .terraform
+*.pem
+*.key
+infra/current-image
+infra/previous-image
+infra/.deploy.lock
