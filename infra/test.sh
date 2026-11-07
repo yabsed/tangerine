@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/../server"
 
 # Test the API contract, then migrate the CI database.
 python -m unittest discover -s tests
@@ -23,7 +23,7 @@ curl --fail --silent --show-error --output /dev/null \
     --retry 20 --retry-connrefused --retry-delay 2 \
     http://127.0.0.1:8000/api/health
 
-if ! python infra/smoke.py http://127.0.0.1:8000 https://yabsed.github.io; then
+if ! python ../infra/smoke.py http://127.0.0.1:8000 https://yabsed.github.io; then
     awk '
         /^  File / { print }
         /^[a-zA-Z_][a-zA-Z0-9_.]*Error:/ {

@@ -11,7 +11,7 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
-  base: '/23-5-team9-web/',
+  base: '/tangerine/',
   server: {
     watch: {
       usePolling: true,

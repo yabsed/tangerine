@@ -1,0 +1,42 @@
+# Local settings and credentials
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.pem
+*.key
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage*
+htmlcov/
+
+# Web builds and dependencies
+node_modules/
+dist/
+dist-ssr/
+build/
+
+# Local tools and services
+.idea/
+.vscode/
+.DS_Store
+*.log
+*.swp
+db_docker/
+minio/
+sonarqube/
+.sonarqube/
+.scannerwork/
+.terraform/
+
+# Server deployment state
+infra/current-image
+infra/previous-image
+infra/.deploy.lock

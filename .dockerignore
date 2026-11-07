@@ -1,0 +1,16 @@
+# Send only the API runtime and backup uploader to Docker.
+**
+!server/
+!server/requirements.txt
+!server/alembic.ini
+!server/carrot/
+!server/carrot/**
+!infra/
+!infra/backup.py
+
+# Local files never belong in the image.
+**/__pycache__
+**/*.pyc
+**/.env*
+**/*.pem
+**/*.key

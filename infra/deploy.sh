@@ -19,7 +19,7 @@ rm -rf "$DOCKER_CONFIG"
 
 docker compose up -d --wait db
 
-# Stop writes while migrations reset image references during the storage switch.
+# Stop writes while database migrations run.
 docker compose stop api
 if ! docker compose run --rm --no-deps api alembic upgrade head; then
     docker compose start api

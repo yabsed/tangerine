@@ -1,8 +1,13 @@
-name: Deploy server
+name: Server
 
 on:
   push:
     branches: [main]
+    paths:
+      - 'server/**'
+      - 'infra/**'
+      - '.dockerignore'
+      - '.github/workflows/server.yml'
   pull_request:
   workflow_dispatch:
 
@@ -15,6 +20,7 @@ concurrency:
 
 jobs:
   test:
+    name: Server tests
     runs-on: ubuntu-latest
 
     services:
@@ -41,7 +47,7 @@ jobs:
       DB_USER: root
       DB_PASSWORD: test-password
 
-      FRONTEND_URL: https://yabsed.github.io/23-5-team9-web/
+      FRONTEND_URL: https://yabsed.github.io/tangerine/
       ACCESS_TOKEN_SECRET: isolated-ci-access-secret
       REFRESH_TOKEN_SECRET: isolated-ci-refresh-secret
       SESSION_SECRET: isolated-ci-session-secret
@@ -60,13 +66,15 @@ jobs:
         with:
           python-version: '3.11'
           cache: pip
+          cache-dependency-path: server/requirements.txt
 
-      - run: pip install -r requirements.txt
+      - run: pip install -r server/requirements.txt
 
       - name: Test API and migrations
         run: bash infra/test.sh
 
   build:
+    name: Server build
     needs: test
     runs-on: ubuntu-latest
 
@@ -92,12 +100,14 @@ jobs:
         id: image
         with:
           context: .
+          file: infra/Dockerfile
           push: ${{ github.event_name != 'pull_request' }}
           tags: ghcr.io/${{ github.repository }}:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
   deploy:
+    name: Deploy server
     needs: build
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest

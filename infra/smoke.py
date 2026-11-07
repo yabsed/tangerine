@@ -77,7 +77,7 @@ async def run(args):
 
         users = []
         for name in ("a", "b", "outsider"):
-            credentials = {"email": f"deploy-{name}@example.com", "password": password}
+            credentials = {"email": f"deploy-tangerine-{name}@example.com", "password": password}
             response = await http.post("/api/auth/tokens", json=credentials)
             if response.status_code != 200:
                 response = await http.post("/api/user/", json=credentials)

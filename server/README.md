@@ -1,14 +1,16 @@
-# 23-5-team9-server
-### 와플스튜디오 23.5기 9조 server Workflow
+# Server
 
-build db
+FastAPI 애플리케이션은 `carrot/`, DB 마이그레이션은 `carrot/db/migrations/`에 있다.
+단위 테스트는 `tests/`, 통합 검증과 운영 배포는 루트 `infra/`에서 관리한다.
 
-- 기본 작업 브랜치: `dev`
-- 각 기능들을 개발할 때: `feature/function` 브랜치를 만들어 해당 브랜치에서 작업
-- 기능이 완성된 경우 `dev` 브랜치로 병합 후 디버깅
-- 디비깅이 완료되면 `main` 브랜치로 병합
+로컬 Python 작업은 `server/`에서 실행한다. `make sync`로 의존성을 설치하고
+`.env.local.example`을 복사해 로컬 MySQL과 이미지 저장소 설정을 채운다.
+`uv run alembic upgrade head`로 DB를 준비하고 `uv run uvicorn carrot.main:app --reload`로 실행한다.
 
----
+의존성 변경 시 `pyproject.toml`·`uv.lock`을 갱신하고 `make reqs`로 배포 목록을 만든다.
+운영 절차는 [infra/README.md](../infra/README.md)를 참고한다.
+
+아래는 원본 프로젝트의 기능 설계 기록이다.
 
 # 기능 매핑 및 구현 범위
 
@@ -157,8 +159,3 @@ build db
 - 경매 종료 시 자동 낙찰 처리
 - 낙찰자 가상 화폐 결제
 - 거래 기록 생성
-
-
-## 배포
-
-Lightsail·GitHub Actions 운영 절차는 [infra/README.md](infra/README.md)를 참고한다.

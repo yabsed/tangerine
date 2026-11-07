@@ -1,8 +1,11 @@
-name: Deploy web
+name: Web
 
 on:
   push:
     branches: [main]
+    paths:
+      - 'web/**'
+      - '.github/workflows/web.yml'
   pull_request:
   workflow_dispatch:
 
@@ -15,15 +18,23 @@ concurrency:
 
 jobs:
   build:
+    name: Web build
     runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: web
+
     env:
-      VITE_API_ORIGIN: ${{ vars.VITE_API_ORIGIN }}
+      VITE_API_ORIGIN: ${{ vars.API_ORIGIN }}
+
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: npm
+          cache-dependency-path: web/package-lock.json
       - run: npm ci
       - run: npx tsc --noEmit
       - name: Build
@@ -33,9 +44,10 @@ jobs:
       - uses: actions/upload-pages-artifact@v4
         if: github.event_name != 'pull_request'
         with:
-          path: dist
+          path: web/dist
 
   deploy:
+    name: Deploy web
     needs: build
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
