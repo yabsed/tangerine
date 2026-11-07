@@ -7,7 +7,6 @@ import {
   markMessagesAsRead,
   Message,
 } from '@/features/chat/api/chatApi';
-import { POLLING_CONFIG } from '@/shared/config/polling';
 
 // Re-export types for convenience
 export type { ChatRoom, Message } from '@/features/chat/api/chatApi';
@@ -28,7 +27,7 @@ export function useChatRooms(options: UseChatRoomsOptions = {}) {
   const { data: rooms, isLoading, error, refetch } = useQuery({
     queryKey: chatKeys.rooms(),
     queryFn: fetchChatRooms,
-    staleTime: POLLING_CONFIG.STALE_TIME.CHAT_ROOMS,
+    staleTime: 60_000,
     enabled,
     retry: 2, // 네트워크 오류 등을 위해 2회 재시도
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
@@ -58,7 +57,7 @@ export function useMessages(roomId: string | undefined) {
     queryKey: chatKeys.messages(roomId || ''),
     queryFn: () => fetchMessages(roomId!),
     enabled: !!roomId,
-    staleTime: POLLING_CONFIG.STALE_TIME.CHAT_MESSAGES,
+    staleTime: 30_000,
   });
 
   return {

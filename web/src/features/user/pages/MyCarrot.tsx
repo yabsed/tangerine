@@ -13,7 +13,6 @@ import { useTranslation } from '@/shared/i18n';
 
 import { useOnboarding } from '@/features/user/hooks/useUser';
 import { useUser } from '@/features/user/hooks/useUser';
-import { POLLING_CONFIG } from '@/shared/config/polling';
 
 type TabType = 'products' | 'bids' | 'profile' | 'coin' | 'transactions';
 
@@ -22,7 +21,7 @@ interface MyCarrotProps {
 }
 
 function MyCarrot({ initialTab }: MyCarrotProps) {
-  const { user } = useUser({ refetchInterval: POLLING_CONFIG.USER_BALANCE });
+  const { user } = useUser();
   const { logout } = useAuth();
   const navigate = useNavigate();
   const onboardingMutation = useOnboarding();

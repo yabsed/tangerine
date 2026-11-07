@@ -9,11 +9,7 @@ export const userKeys = {
   profile: (userId: string) => [...userKeys.all, 'profile', userId] as const,
 };
 
-interface UseUserOptions {
-  refetchInterval?: number | false;
-}
-
-export function useUser(options: UseUserOptions = {}) {
+export function useUser() {
   // Zustand store를 Single Source of Truth로 사용
   const token = useToken();
   const logout = useAuthStore((state) => state.logout);
@@ -34,7 +30,6 @@ export function useUser(options: UseUserOptions = {}) {
     enabled: !!token,
     staleTime: 1000 * 60 * 5, // 5분
     retry: false,
-    refetchInterval: options.refetchInterval,
   });
 
   const isLoggedIn = !!user;

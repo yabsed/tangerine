@@ -13,11 +13,10 @@ export const transactionKeys = {
 
 interface UseTransactionsOptions {
   partnerId?: string;
-  refetchInterval?: number | false;
 }
 
 export function useTransactions(options?: UseTransactionsOptions) {
-  const { partnerId, refetchInterval } = options || {};
+  const { partnerId } = options || {};
   const token = useToken();
   const queryClient = useQueryClient();
   const [offset, setOffset] = useState(0);
@@ -37,7 +36,6 @@ export function useTransactions(options?: UseTransactionsOptions) {
     }),
     enabled: !!token,
     staleTime: 1000 * 60,
-    refetchInterval,
   });
 
   // Reset state when partnerId changes
