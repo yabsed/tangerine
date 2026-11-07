@@ -10,10 +10,55 @@ import json
 import os
 import sys
 from contextlib import AsyncExitStack
+from urllib.parse import urlsplit
 
 import httpx
 from websockets.asyncio.client import connect
 from websockets.exceptions import ConnectionClosed, InvalidStatus
+
+
+async def check_images(api, headers):
+    bucket = os.environ["S3_IMAGE_BUCKET"]
+    region = os.environ.get("AWS_DEFAULT_REGION", "ap-southeast-2")
+    origin = f"https://{bucket}.s3.{region}.amazonaws.com"
+
+    png = base64.b64decode(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lE"
+        "QVR42mP8/x8AAwMCAO+jhtkAAAAASUVORK5CYII="
+    )
+
+    # S3 requests carry no API authorization or session cookies.
+    async with httpx.AsyncClient(timeout=30, follow_redirects=False) as public:
+        for kind in ("product", "user"):
+            # Upload through the authenticated API.
+            response = await api.post(
+                f"/api/image/{kind}",
+                headers=headers,
+                files={"file": ("smoke.png", png, "image/png")},
+            )
+            response.raise_for_status()
+            image = response.json()
+
+            # Both upload and lookup return the same unsigned S3 URL.
+            url = urlsplit(image["image_url"])
+            assert image["image_url"] == f"{origin}/images/{image['id']}"
+            assert not url.query and not url.fragment
+
+            response = await api.get(f"/api/image/{kind}/{image['id']}")
+            response.raise_for_status()
+            assert response.json() == image
+
+            # Download the actual bytes directly, without a redirect.
+            response = await public.get(image["image_url"])
+            assert response.status_code == 200
+            assert response.content == png
+            assert response.headers["content-type"] == "image/png"
+            assert response.headers["cache-control"] == "public, max-age=86400"
+
+        response = await public.get(origin, params={"list-type": "2"})
+        assert response.status_code == 403
+
+    print("Public S3 upload, direct delivery, and blocked bucket listing passed.")
 
 
 async def run(args):
@@ -107,16 +152,7 @@ async def run(args):
         print("WebSocket delivery, HTTP broadcast, and replay passed.")
 
         if args.images:
-            png = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jhtkAAAAASUVORK5CYII=")
-            response = await http.post(
-                "/api/image/product", headers=alice["headers"],
-                files={"file": ("smoke.png", png, "image/png")},
-            )
-            response.raise_for_status()
-            response = await http.get(response.json()["image_url"])
-            response.raise_for_status()
-            assert response.content == png
-            print("Private S3 image upload and API delivery passed.")
+            await check_images(http, alice["headers"])
 
 
 def main():
