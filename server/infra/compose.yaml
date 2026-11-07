@@ -1,0 +1,74 @@
+name: dangeun
+
+services:
+  db:
+    image: mysql:8.4
+    restart: unless-stopped
+    command: [--innodb-buffer-pool-size=128M, --max-connections=40]
+    environment:
+      MYSQL_DATABASE:      carrot
+      MYSQL_USER:          carrot
+      MYSQL_PASSWORD:      ${DB_PASSWORD:?}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?}
+    volumes:
+      - mysql:/var/lib/mysql
+    healthcheck:
+      test: [CMD-SHELL, 'MYSQL_PWD="$$MYSQL_ROOT_PASSWORD" mysql -uroot -e "SELECT 1" >/dev/null 2>&1']
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  api:
+    image: ${API_IMAGE:?}
+    restart: unless-stopped
+    environment:
+      ENV:                   prod
+
+      DB_DIALECT:            mysql
+      DB_DRIVER:             aiomysql
+      DB_HOST:               db
+      DB_PORT:               3306
+      DB_DATABASE:           carrot
+      DB_USER:               carrot
+      DB_PASSWORD:           ${DB_PASSWORD:?}
+
+      FRONTEND_URL:          ${FRONTEND_URL:?}
+      PUBLIC_API_URL:        ${PUBLIC_API_URL:?}
+      ACCESS_TOKEN_SECRET:   ${ACCESS_TOKEN_SECRET:?}
+      REFRESH_TOKEN_SECRET:  ${REFRESH_TOKEN_SECRET:?}
+      SESSION_SECRET:        ${SESSION_SECRET:?}
+      GOOGLE_CLIENT_ID:      ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET:  ${GOOGLE_CLIENT_SECRET:-}
+
+      AWS_DEFAULT_REGION:    ${AWS_DEFAULT_REGION:?}
+      AWS_ACCESS_KEY_ID:     ${AWS_ACCESS_KEY_ID:?}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:?}
+      S3_BUCKET:             ${S3_BUCKET:?}
+      S3_IMAGE_BUCKET:        ${S3_IMAGE_BUCKET:?}
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      PUBLIC_API_URL: ${PUBLIC_API_URL:?}
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy:/data
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  mysql:
+  caddy:

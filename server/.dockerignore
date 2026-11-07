@@ -1,0 +1,15 @@
+.git
+.github
+.venv
+.env*
+**/.env*
+**/__pycache__
+**/*.pyc
+**/*.pem
+**/*.key
+.pytest_cache
+.ruff_cache
+tests
+deploy
+db_docker
+minio

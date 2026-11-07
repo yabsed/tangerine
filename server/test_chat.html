@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>FastAPI WebSocket Test</title>
+    <style>
+        #messages { border: 1px solid #ccc; height: 300px; overflow-y: scroll; margin-bottom: 10px; padding: 10px; }
+        .system { color: #888; font-style: italic; }
+        .me { color: blue; }
+        .other { color: green; }
+    </style>
+</head>
+<body>
+    <h2>그룹 채팅 테스트</h2>
+    <div id="setup">
+        <input type="text" id="roomId" placeholder="방 ID (예: room1)" value="room1">
+        <input type="text" id="token" placeholder="JWT 토큰 입력">
+        <button onclick="connect()">연결하기</button>
+    </div>
+
+    <div id="chat-area" style="display:none;">
+        <div id="messages"></div>
+        <input type="text" id="messageInput" placeholder="메시지 입력..." onkeypress="if(event.keyCode==13) sendMessage()">
+        <button onclick="sendMessage()">전송</button>
+    </div>
+
+    <script>
+        let ws;
+
+        function connect() {
+            const roomId = document.getElementById('roomId').value;
+            const token = document.getElementById('token').value;
+
+            // 로컬 서버 주소 (FastAPI 기본 포트 8000)
+            ws = new WebSocket(`ws://localhost:8000/ws/${roomId}`);
+
+            ws.onopen = function() {
+                appendMessage("시스템", "서버에 연결되었습니다. 인증을 시도합니다...", "system");
+                // 1. 연결 직후 첫 메시지로 토큰 전송 (Ticket 방식)
+                ws.send(JSON.stringify({ "token": token }));
+                
+                document.getElementById('setup').style.display = 'none';
+                document.getElementById('chat-area').style.display = 'block';
+            };
+
+            ws.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                if (data.error) {
+                    appendMessage("에러", data.error, "system");
+                } else {
+                    const sender = data.sender || "상대방";
+                    appendMessage(sender, data.content, "other");
+                }
+            };
+
+            ws.onclose = function(e) {
+                appendMessage("시스템", `연결이 종료되었습니다. (코드: ${e.code})`, "system");
+            };
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            if (input.value && ws) {
+                // 메시지 전송
+                ws.send(JSON.stringify({ "content": input.value }));
+                appendMessage("나", input.value, "me");
+                input.value = '';
+            }
+        }
+
+        function appendMessage(sender, content, className) {
+            const msgDiv = document.getElementById('messages');
+            const p = document.createElement('p');
+            p.className = className;
+            p.innerHTML = `<strong>${sender}:</strong> ${content}`;
+            msgDiv.appendChild(p);
+            msgDiv.scrollTop = msgDiv.scrollHeight;
+        }
+    </script>
+</body>
+</html>
