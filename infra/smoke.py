@@ -127,6 +127,9 @@ def main():
     args = parser.parse_args()
     try:
         asyncio.run(run(args))
+    except httpx.HTTPStatusError as error:
+        print(f"HTTP check failed: {error.request.method} {error.request.url.path} ({error.response.status_code}).")
+        return 1
     except Exception as error:
         print(f"Smoke test failed ({type(error).__name__}). No credentials logged.")
         return 1
