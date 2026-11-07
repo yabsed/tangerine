@@ -23,6 +23,7 @@ services:
     restart: unless-stopped
     environment:
       ENV:                   prod
+
       DB_DIALECT:            mysql
       DB_DRIVER:             aiomysql
       DB_HOST:               db
@@ -30,6 +31,7 @@ services:
       DB_DATABASE:           carrot
       DB_USER:               carrot
       DB_PASSWORD:           ${DB_PASSWORD:?}
+
       FRONTEND_URL:          ${FRONTEND_URL:?}
       PUBLIC_API_URL:        ${PUBLIC_API_URL:?}
       ACCESS_TOKEN_SECRET:   ${ACCESS_TOKEN_SECRET:?}
@@ -37,10 +39,12 @@ services:
       SESSION_SECRET:        ${SESSION_SECRET:?}
       GOOGLE_CLIENT_ID:      ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET:  ${GOOGLE_CLIENT_SECRET:-}
+
       AWS_DEFAULT_REGION:    ${AWS_DEFAULT_REGION:?}
       AWS_ACCESS_KEY_ID:     ${AWS_ACCESS_KEY_ID:?}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:?}
       S3_BUCKET:             ${S3_BUCKET:?}
+      S3_IMAGE_BUCKET:        ${S3_IMAGE_BUCKET:?}
     depends_on:
       db:
         condition: service_healthy

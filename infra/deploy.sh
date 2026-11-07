@@ -18,7 +18,13 @@ docker compose pull api
 rm -rf "$DOCKER_CONFIG"
 
 docker compose up -d --wait db
-docker compose run --rm --no-deps api alembic upgrade head
+
+# Stop writes while migrations reset image references during the storage switch.
+docker compose stop api
+if ! docker compose run --rm --no-deps api alembic upgrade head; then
+    docker compose start api
+    exit 1
+fi
 
 docker compose up -d --no-deps --wait api
 docker compose up -d --no-recreate caddy
@@ -27,5 +33,6 @@ docker compose exec -T caddy caddy reload --config /etc/caddy/Caddyfile
 if [ -f current-image ]; then
     cp current-image previous-image
 fi
+
 printf '%s\n' "$API_IMAGE" > current-image
 docker compose ps

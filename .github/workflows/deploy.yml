@@ -16,6 +16,7 @@ concurrency:
 jobs:
   test:
     runs-on: ubuntu-latest
+
     services:
       mysql:
         image: mysql:8.4
@@ -28,8 +29,10 @@ jobs:
           --health-interval=10s
           --health-timeout=5s
           --health-retries=30
+
     env:
       ENV: test
+
       DB_DIALECT: mysql
       DB_DRIVER: aiomysql
       DB_HOST: 127.0.0.1
@@ -37,51 +40,54 @@ jobs:
       DB_DATABASE: carrot
       DB_USER: root
       DB_PASSWORD: test-password
+
       FRONTEND_URL: https://yabsed.github.io/23-5-team9-web/
       ACCESS_TOKEN_SECRET: isolated-ci-access-secret
       REFRESH_TOKEN_SECRET: isolated-ci-refresh-secret
       SESSION_SECRET: isolated-ci-session-secret
+
       AWS_DEFAULT_REGION: ap-southeast-2
       AWS_ACCESS_KEY_ID: testing
       AWS_SECRET_ACCESS_KEY: testing
+      S3_IMAGE_BUCKET: test-images
+
       SMOKE_PASSWORD: integration-test-123
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           cache: pip
+
       - run: pip install -r requirements.txt
-      - run: python -m unittest discover -s tests
-      - name: Migrate an empty database
-        run: alembic upgrade head
-      - name: Check HTTP and WebSocket behavior
-        run: |
-          python -m uvicorn carrot.main:app --host 127.0.0.1 --no-access-log > /tmp/api.log 2>&1 &
-          trap 'kill $!' EXIT
-          curl --fail --silent --retry 20 --retry-connrefused --retry-delay 2 http://127.0.0.1:8000/api/health
-          if ! python infra/smoke.py http://127.0.0.1:8000 https://yabsed.github.io; then
-            awk '/^  File / {print} /^[a-zA-Z_][a-zA-Z0-9_.]*Error:/ {sub(/:.*/, ": details omitted"); print}' /tmp/api.log
-            exit 1
-          fi
+
+      - name: Test API and migrations
+        run: bash infra/test.sh
 
   build:
     needs: test
     runs-on: ubuntu-latest
+
     permissions:
       contents: read
       packages: write
+
     outputs:
       image: ghcr.io/${{ github.repository }}@${{ steps.image.outputs.digest }}
+
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
+
       - uses: docker/login-action@v3
         if: github.event_name != 'pull_request'
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
       - uses: docker/build-push-action@v6
         id: image
         with:
@@ -96,44 +102,38 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     environment: production
+
     permissions:
       contents: read
       packages: read
+
     env:
       SSH_HOST: ${{ vars.SSH_HOST }}
       API_ORIGIN: ${{ vars.API_ORIGIN }}
       IMAGE: ${{ needs.build.outputs.image }}
+      S3_IMAGE_BUCKET: dangeun-images-8c4e6a29
+
     steps:
       - uses: actions/checkout@v4
-      - name: Prepare SSH and environment
+
+      - name: Deliver and deploy
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
           PRODUCTION_ENV: ${{ secrets.PRODUCTION_ENV }}
-        run: |
-          umask 077
-          mkdir -p ~/.ssh
-          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
-          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
-          printf '%s\n' "$PRODUCTION_ENV" > production.env
-      - name: Deliver and deploy
-        env:
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          scp infra/compose.yaml infra/Caddyfile infra/deploy.sh infra/backup.sh "ubuntu@$SSH_HOST:/opt/dangeun/"
-          scp production.env "ubuntu@$SSH_HOST:/opt/dangeun/.env.next"
-          ssh "ubuntu@$SSH_HOST" 'chmod 600 /opt/dangeun/.env.next && mv /opt/dangeun/.env.next /opt/dangeun/.env'
-          printf '%s' "$GHCR_TOKEN" | ssh "ubuntu@$SSH_HOST" "bash /opt/dangeun/deploy.sh '$IMAGE' '$GITHUB_ACTOR'"
+        run: bash infra/deliver.sh
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+
       - name: Verify the public deployment
         env:
           SMOKE_PASSWORD: ${{ secrets.SMOKE_PASSWORD }}
         run: |
           pip install httpx==0.28.1 websockets==15.0.1
-          curl --fail --silent --retry 12 --retry-all-errors --retry-delay 5 "$API_ORIGIN/api/health"
+          curl --fail --silent --show-error --output /dev/null \
+            --retry 12 --retry-all-errors --retry-delay 5 \
+            "$API_ORIGIN/api/health"
           python infra/smoke.py "$API_ORIGIN" https://yabsed.github.io --images
-      - name: Remove runner credentials
-        if: always()
-        run: rm -f production.env ~/.ssh/id_rsa ~/.ssh/known_hosts
