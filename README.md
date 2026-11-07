@@ -1,44 +1,23 @@
 # Tangerine
 
-웹과 API를 한 저장소에서 개발하고 배포한다.
+동네 물건을 사고파는 감귤마켓입니다. 판매자와 채팅하고 경매에도 참여해 보세요.
 
-| 서비스 | 주소 |
-| --- | --- |
-| 웹 | https://yabsed.github.io/tangerine/ |
-| API | https://54-253-247-152.sslip.io |
+**[감귤마켓 시작하기 → https://yabsed.github.io/tangerine/](https://yabsed.github.io/tangerine/)**
 
-```text
-브라우저 ── HTTPS / WSS ── Lightsail
-                           Caddy → FastAPI → MySQL
-                                      │
-                                      ├─ 이미지 업로드 → S3 이미지 버킷
-                                      └─ DB 백업      → S3 비공개 버킷
+![감귤마켓 중고거래 화면](docs/image.png)
 
-브라우저 ── 이미지 다운로드 ── S3 이미지 버킷
-```
+## 시작하기
 
-## 읽는 순서
+1. **회원가입**에서 이메일과 비밀번호를 입력하고, 닉네임과 지역을 설정하세요.
+2. **중고거래**에서 지역을 선택하거나 검색해 원하는 물건을 찾아보세요.
+3. 상품의 **채팅하기**를 눌러 판매자와 대화하세요.
 
-- [server/](server/README.md): FastAPI, 데이터 모델, 마이그레이션, 테스트
-- [web/](web/readme.md): React 화면과 API 클라이언트
-- [infra/](infra/README.md): 실행 구성, 배포, 검증, 백업
-- [.github/workflows/](.github/workflows): 서버와 웹의 CI/CD
+판매하려면 **마이감귤 → 내 상품 관리 → + 상품 등록**에서 사진, 가격, 설명을 입력하세요.
 
-PR은 두 앱을 검사한다. `main`에 반영하면 변경된 서비스가 배포된다.
-서버는 `server/`·`infra/`, 웹은 `web/` 변경을 기준으로 실행한다.
-두 앱을 함께 바꾸는 기능도 한 브랜치와 PR에서 관리한다.
+## 알아두기
 
-## 이전 이력
+- **경매** 탭에서 입찰하고, **마이감귤**에서 내 입찰과 거래 내역을 확인할 수 있습니다.
+- 코인은 충전·송금·경매 결제에 사용하는 테스트용 가상 잔액입니다.
+- 상단 메뉴에서 언어와 밝은 테마·어두운 테마를 바꿀 수 있습니다.
 
-`23-5-team9-server`와 `23-5-team9-web`을 각각 한 번의 merge로 가져왔다.
-원본 커밋의 SHA·작성자·부모 관계를 보존했다. 현재 파일은 이 저장소가 직접 관리한다.
-
-```sh
-git log --first-parent --oneline
-git log archive/server/main
-git log archive/web/main
-```
-
-원본 서버 작업 브랜치는 `archive/server/restore-direct-s3-images`에 보존했다.
-과거 커밋은 당시 파일 경로를 사용한다. 현재 코드는 `server/`와 `web/`에 있다.
-기존 저장소의 PR과 Actions 실행 기록은 해당 저장소에서 확인한다.
+[문제 신고](https://github.com/yabsed/tangerine/issues) · [웹 개발](web/readme.md) · [API 개발](server/README.md) · [운영·배포](infra/README.md)
