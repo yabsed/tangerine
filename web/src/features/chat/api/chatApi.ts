@@ -27,19 +27,10 @@ export async function fetchChatRooms(): Promise<ChatRoomListRead[]> {
 
 // 메시지 목록 조회
 export async function fetchMessages(room_id: string): Promise<MessageRead[]> {
-  const messages: MessageRead[] = [];
-  let lastId = 0;
-
-  // Replay all pages so reconnecting cannot lose messages beyond the first 50.
-  while (true) {
-    const { data } = await client.get<MessageRead[]>(
-      `/api/chat/rooms/${room_id}/messages`,
-      { params: { last_id: lastId, limit: 100 } },
-    );
-    messages.push(...data);
-    if (data.length < 100) return messages;
-    lastId = data[data.length - 1].id;
-  }
+  const response = await client.get<MessageRead[]>(
+    `/api/chat/rooms/${room_id}/messages`
+  );
+  return response.data;
 }
 
 // 메시지 전송

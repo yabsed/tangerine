@@ -1,0 +1,115 @@
+name: Build & Push Docker image to GHCR + Deploy env to EC2
+
+on:
+  push:
+    branches:
+      - dev
+      - main
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set image tag and target env
+        id: meta
+        run: |
+          if [ "${GITHUB_REF_NAME}" = "main" ]; then
+            echo "tag=prod" >> $GITHUB_OUTPUT
+            echo "target=prod" >> $GITHUB_OUTPUT
+          else
+            echo "tag=dev" >> $GITHUB_OUTPUT
+            echo "target=dev" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ghcr.io/wafflestudio/23-5-team9-server:${{ steps.meta.outputs.tag }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            set -euo pipefail
+            mkdir -p ~/deploy
+            cd ~/deploy
+
+            TARGET="${{ steps.meta.outputs.target }}"
+            
+            # 환경 변수 파일 생성
+            if [ "$TARGET" = "dev" ]; then
+              ENV_FILE=".env.dev"
+              DB_USER="${{ secrets.DB_USER_DEV }}"
+              DB_PASS="${{ secrets.DB_PASSWORD_DEV }}"
+              DB_NAME="${{ secrets.DB_DATABASE_DEV }}"
+              FRONT_URL="${{ secrets.FRONTEND_URL_DEV }}"
+              AT_SECRET="${{ secrets.ACCESS_TOKEN_SECRET_DEV }}"
+              RT_SECRET="${{ secrets.REFRESH_TOKEN_SECRET_DEV }}"
+              SESS_SECRET="${{ secrets.SESSION_SECRET_DEV }}"
+              ENV_VAR="dev"
+            else
+              ENV_FILE=".env.prod"
+              DB_USER="${{ secrets.DB_USER_PROD }}"
+              DB_PASS="${{ secrets.DB_PASSWORD_PROD }}"
+              DB_NAME="${{ secrets.DB_DATABASE_PROD }}"
+              FRONT_URL="${{ secrets.FRONTEND_URL_PROD }}"
+              AT_SECRET="${{ secrets.ACCESS_TOKEN_SECRET_PROD }}"
+              RT_SECRET="${{ secrets.REFRESH_TOKEN_SECRET_PROD }}"
+              SESS_SECRET="${{ secrets.SESSION_SECRET_PROD }}"
+              ENV_VAR="prod"
+            fi
+
+            cat > $ENV_FILE <<EOF
+            ENV=$ENV_VAR
+            DB_DIALECT=${{ secrets.DB_DIALECT }}
+            DB_DRIVER=${{ secrets.DB_DRIVER }}
+            DB_HOST=${{ secrets.DB_HOST }}
+            DB_PORT=${{ secrets.DB_PORT }}
+            DB_USER=$DB_USER
+            DB_PASSWORD=$DB_PASS
+            DB_DATABASE=$DB_NAME
+            GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+            GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
+            FRONTEND_URL=$FRONT_URL
+            ACCESS_TOKEN_SECRET=$AT_SECRET
+            REFRESH_TOKEN_SECRET=$RT_SECRET
+            SESSION_SECRET=$SESS_SECRET
+            EOF
+            chmod 600 $ENV_FILE
+
+            # 서비스 갱신
+            SERVICE_NAME="api_$TARGET"
+            docker system prune -af
+            docker compose pull $SERVICE_NAME
+            docker compose run --rm $SERVICE_NAME alembic upgrade head
+            docker compose up -d $SERVICE_NAME
+            
+            # Nginx 재시작 (설정 반영)
+            docker compose restart nginx
+            docker ps --format "table {{.Names}}\t{{.Image}}\t{{.Status}}"

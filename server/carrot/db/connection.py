@@ -11,11 +11,9 @@ class DatabaseManager:
         self.engine: AsyncEngine = create_async_engine(
             DB_SETTINGS.url,
             pool_recycle=28000,
-            pool_size=5,
-            max_overflow=5,
+            pool_size=10,
             pool_pre_ping=True,
             echo=False,
-            hide_parameters=True,
         )
         self.session_factory = async_sessionmaker(
             bind=self.engine,
@@ -27,7 +25,6 @@ class DatabaseManager:
 db = DatabaseManager()
 
 
-# Use Depends(..., scope="function") so commit finishes before a success response.
 async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
     async with db.session_factory() as session:
         try:

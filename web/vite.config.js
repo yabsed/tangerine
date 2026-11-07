@@ -11,16 +11,16 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
-  base: '/tangerine/',
+  // Vercel 배포 시에는 보통 '/'를 사용합니다.
+  base: '/23-5-team9-web/',
   server: {
     watch: {
       usePolling: true,
     },
     proxy: {
       '/api': {
-        target: 'http://localhost:8000',
+        target: 'https://dev.server.team9-toy-project.p-e.kr',
         changeOrigin: true,
-        ws: true,
       },
     },
   },

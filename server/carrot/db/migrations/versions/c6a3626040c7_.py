@@ -1,7 +1,7 @@
 """empty message
 
 Revision ID: c6a3626040c7
-Revises: 18ad2967df96
+Revises: 3e2fb92c6bac
 Create Date: 2026-01-19 23:48:13.692876
 
 """
@@ -17,8 +17,7 @@ from sqlalchemy.sql import table, column
 
 # revision identifiers, used by Alembic.
 revision: str = "c6a3626040c7"
-# The January baseline replaced the deleted 3e2fb92c6bac chain.
-down_revision: Union[str, Sequence[str], None] = "18ad2967df96"
+down_revision: Union[str, Sequence[str], None] = "3e2fb92c6bac"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

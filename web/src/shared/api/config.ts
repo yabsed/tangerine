@@ -1,7 +1,7 @@
-export const MAIN_API_URL = (import.meta.env.VITE_API_ORIGIN || '').replace(/\/$/, '');
+//export const MAIN_API_URL = import.meta.env.PROD
+//  ? 'https://52.79.53.76'
+//  : '';
 
-export function chatSocketUrl(roomId: string): string {
-  const url = new URL(`/api/chat/ws/${encodeURIComponent(roomId)}`, MAIN_API_URL || window.location.origin);
-  url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
-  return url.toString();
-}
+export const MAIN_API_URL = import.meta.env.PROD
+  ? 'https://dev.server.team9-toy-project.p-e.kr'
+  : '';

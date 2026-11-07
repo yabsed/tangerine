@@ -155,7 +155,6 @@ class ChatService:
         room_id: str, 
         user_id: str
     ):
-        await self.validate_room_access(db, room_id, user_id)
         # 내가 보낸 게 아니고, 아직 안 읽은 메시지를 찾아 업데이트
         stmt = (
             update(ChatMessage)

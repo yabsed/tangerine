@@ -8,8 +8,6 @@ from carrot.api import api_router
 from carrot.common.exceptions import CarrotException, MissingRequiredFieldException
 from carrot.app.auth.settings import AUTH_SETTINGS
 from carrot.settings import SETTINGS
-from carrot.db.connection import db
-from sqlalchemy import text
 
 app = FastAPI()
 
@@ -49,15 +47,9 @@ def root():
     return "Hello, Waffle Project!"
 
 
-@app.get("/api/health")
-async def health():
-    async with db.session_factory() as session:
-        await session.execute(text("SELECT 1"))
-    return {"status": "ok"}
-
-
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    print(f"REAL ERROR: {exc}")
     for error in exc.errors():
         if error["type"] == "missing":
             raise MissingRequiredFieldException()
@@ -66,6 +58,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 @app.exception_handler(CarrotException)
 async def carrot_exception_handler(request: Request, exc: CarrotException):
+    print(f"REAL ERROR: {exc}")
     return JSONResponse(
         status_code=exc.status_code,
         content={"error_code": exc.error_code, "error_msg": exc.error_msg},
