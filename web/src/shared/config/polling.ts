@@ -12,9 +12,6 @@ export const POLLING_CONFIG = {
   USER_BALANCE: 50_000,     // 잔액 (50초)
   TRANSACTIONS: 50_000,     // 거래 내역 (50초)
 
-  // 채팅방 페이지 전용 (5초)
-  CHAT_ROOM_PAGE: 7_000,    // 채팅방 페이지에서 메시지, 잔액, 송금 폴링
-
   // staleTime 설정
   STALE_TIME: {
     CHAT_ROOMS: 60_000,    // 채팅방 목록 (1분)

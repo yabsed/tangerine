@@ -4,6 +4,8 @@ import { useAuthStore } from '@/features/auth/hooks/store';
 import { chatSocketUrl } from '@/shared/api/config';
 import client from '@/shared/api/client';
 import { chatKeys } from './useChat';
+import { userKeys } from '@/features/user/hooks/useUser';
+import { transactionKeys } from '@/features/pay/hooks/useTransactions';
 
 export function useChatSocket(roomId: string | undefined) {
   const queryClient = useQueryClient();
@@ -33,9 +35,18 @@ export function useChatSocket(roomId: string | undefined) {
         socket.onopen = () => {
           socket?.send(JSON.stringify({ token: useAuthStore.getState().token }));
         };
-        socket.onmessage = () => {
+        socket.onmessage = event => {
+          const { type } = JSON.parse(event.data);
           attempt = 0;
-          // Both "ready" and messages trigger HTTP replay, including missed messages.
+
+          // "ready" also refreshes transfers missed while disconnected.
+          if (type === 'ready' || type === 'transfer') {
+            void queryClient.invalidateQueries({ queryKey: userKeys.me() });
+            void queryClient.invalidateQueries({ queryKey: transactionKeys.all });
+          }
+
+          if (type === 'transfer') return;
+
           void queryClient.invalidateQueries({ queryKey: chatKeys.messages(roomId!) });
           void queryClient.invalidateQueries({ queryKey: chatKeys.rooms() });
         };

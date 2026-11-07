@@ -18,10 +18,19 @@ class ConnectionManager:
 
     async def broadcast_to_room(self, room_id: str, message: dict):
         for websocket in list(self.rooms.get(room_id, {})):
-            try:
-                await asyncio.wait_for(websocket.send_json(message), timeout=5)
-            except (WebSocketDisconnect, RuntimeError, OSError, TimeoutError):
-                self.disconnect(websocket, room_id)
+            await self._send(websocket, room_id, message)
+
+    async def notify_users(self, user_ids: set[str], event: dict):
+        for room_id, connections in list(self.rooms.items()):
+            for websocket, user_id in list(connections.items()):
+                if user_id in user_ids:
+                    await self._send(websocket, room_id, event)
+
+    async def _send(self, websocket: WebSocket, room_id: str, message: dict):
+        try:
+            await asyncio.wait_for(websocket.send_json(message), timeout=5)
+        except (WebSocketDisconnect, RuntimeError, OSError, TimeoutError):
+            self.disconnect(websocket, room_id)
 
     async def remove_user(self, room_id: str, user_id: str):
         for websocket, connected_user in list(self.rooms.get(room_id, {}).items()):
