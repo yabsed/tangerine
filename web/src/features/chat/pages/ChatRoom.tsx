@@ -48,7 +48,9 @@ function ChatRoom() {
   }, [userLoading, isLoggedIn, navigate]);
 
   useEffect(() => {
-    if (chatId && isLoggedIn && lastUnreadId && visibility === 'visible') {
+    if (document.visibilityState !== 'visible') return;
+
+    if (chatId && isLoggedIn && lastUnreadId) {
       markAsRead();
     }
   }, [chatId, isLoggedIn, lastUnreadId, visibility, markAsRead]);
