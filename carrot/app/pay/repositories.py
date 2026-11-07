@@ -12,7 +12,7 @@ from carrot.db.connection import get_db_session
 
 class PayRepository:
     def __init__(
-        self, session: Annotated[AsyncSession, Depends(get_db_session)]
+        self, session: Annotated[AsyncSession, Depends(get_db_session, scope="function")]
     ) -> None:
         self.session = session
 

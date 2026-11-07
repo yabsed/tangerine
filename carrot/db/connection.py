@@ -27,6 +27,7 @@ class DatabaseManager:
 db = DatabaseManager()
 
 
+# Use Depends(..., scope="function") so commit finishes before a success response.
 async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
     async with db.session_factory() as session:
         try:

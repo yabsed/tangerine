@@ -25,7 +25,7 @@ chat_router.add_api_websocket_route("/ws/{room_id}", websocket_endpoint)
 async def get_or_create_room(
     opponent_id: str, 
     current_user: Annotated[User, Depends(login_with_header)], 
-    db: AsyncSession = Depends(get_db_session)
+    db: AsyncSession = Depends(get_db_session, scope="function")
 ):
     room = await chat_service.get_existing_room_or_create(db, current_user.id, opponent_id)
     return room
@@ -34,7 +34,7 @@ async def get_or_create_room(
 @chat_router.get("/rooms", response_model=List[ChatRoomListRead])
 async def list_my_rooms(
     current_user: Annotated[User, Depends(login_with_header)],
-    db: AsyncSession = Depends(get_db_session)
+    db: AsyncSession = Depends(get_db_session, scope="function")
 ):
     rooms = await chat_service.get_user_chat_rooms(db, current_user.id)
     return rooms
@@ -45,7 +45,7 @@ async def send_message(
     room_id: str, 
     msg_in: MessageCreate, 
     current_user: Annotated[User, Depends(login_with_header)], 
-    db: AsyncSession = Depends(get_db_session)
+    db: AsyncSession = Depends(get_db_session, scope="function")
 ):
     new_msg = await chat_service.save_new_message(db, room_id, current_user.id, msg_in.content)
     payload = MessageRead.model_validate(new_msg).model_dump(mode="json")
@@ -60,7 +60,7 @@ async def get_messages(
     current_user: Annotated[User, Depends(login_with_header)], 
     last_id: int = Query(default=0, ge=0),
     limit: int = Query(default=50, ge=1, le=100),
-    db: AsyncSession = Depends(get_db_session)
+    db: AsyncSession = Depends(get_db_session, scope="function")
 ):
     # 2. 서비스 함수에 current_user.id를 인자로 전달합니다.
     messages = await chat_service.get_messages_after_id(
@@ -77,7 +77,7 @@ async def get_messages(
 async def mark_messages_as_read(
     room_id: str, 
     current_user: Annotated[User, Depends(login_with_header)], 
-    db: AsyncSession = Depends(get_db_session)
+    db: AsyncSession = Depends(get_db_session, scope="function")
 ):
     await chat_service.update_messages_read_status(db, room_id, current_user.id)
     return {"status": "success"}
@@ -87,7 +87,7 @@ async def mark_messages_as_read(
 async def get_opponent_status(
     room_id: str, 
     current_user: Annotated[User, Depends(login_with_header)], 
-    db: AsyncSession = Depends(get_db_session)
+    db: AsyncSession = Depends(get_db_session, scope="function")
 ):
     # 상대방의 접속 여부나 마지막 확인 시간 등을 반환할 예정입니다.
     status_info = await chat_service.get_chat_partner_status(db, room_id, current_user.id)
@@ -101,7 +101,7 @@ async def get_opponent_status(
 async def create_open_group_room(
     room_in: GroupChatCreate,
     current_user: Annotated[User, Depends(login_with_header)],
-    db: AsyncSession = Depends(get_db_session)
+    db: AsyncSession = Depends(get_db_session, scope="function")
 ):
     # 서비스 로직: create_open_group_room 호출
     new_room = await chat_service.create_open_group_room(
@@ -118,7 +118,7 @@ async def create_open_group_room(
 async def join_group_chat_room(
     room_id: str,
     current_user: Annotated[User, Depends(login_with_header)],
-    db: AsyncSession = Depends(get_db_session)
+    db: AsyncSession = Depends(get_db_session, scope="function")
 ):
     room = await chat_service.join_group_room(db, room_id, current_user.id)
     return room
@@ -128,7 +128,7 @@ async def join_group_chat_room(
 async def get_group_room_members(
     room_id: str,
     current_user: Annotated[User, Depends(login_with_header)],
-    db: AsyncSession = Depends(get_db_session)
+    db: AsyncSession = Depends(get_db_session, scope="function")
 ):
     # 유저가 해당 방 멤버인지 확인하는 권한 체크 로직을 서비스에 추가하면 더 좋습니다.
     members = await chat_service.get_group_room_members(db, room_id)
@@ -140,7 +140,7 @@ async def remove_group_member(
     room_id: str,
     target_user_id: str, # 나 자신이면 leave, 타인이면 kick
     current_user: Annotated[User, Depends(login_with_header)],
-    db: AsyncSession = Depends(get_db_session)
+    db: AsyncSession = Depends(get_db_session, scope="function")
 ):
     if target_user_id == current_user.id:
         # 1. 본인이 나가는 경우 (leave_group_room)
@@ -162,7 +162,7 @@ async def remove_group_member(
 @chat_router.get("/rooms/group", response_model=List[GroupChatListRead]) # 새로 정의할 스키마
 async def list_my_group_rooms(
     current_user: Annotated[User, Depends(login_with_header)],
-    db: AsyncSession = Depends(get_db_session)
+    db: AsyncSession = Depends(get_db_session, scope="function")
 ):
     # 서비스 로직 호출
     rooms = await chat_service.get_user_group_chat_rooms(db, current_user.id)

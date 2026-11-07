@@ -16,7 +16,7 @@ class PayService:
         self,
         pay_repository: Annotated[PayRepository, Depends()],
         user_repository: Annotated[UserRepository, Depends()],
-        session: Annotated[AsyncSession, Depends(get_db_session)],
+        session: Annotated[AsyncSession, Depends(get_db_session, scope="function")],
     ) -> None:
         self.pay_repository = pay_repository
         self.user_repository = user_repository

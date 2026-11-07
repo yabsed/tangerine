@@ -29,7 +29,7 @@ class AuctionService:
         self.db_session = db_session
 
     @classmethod
-    def create(cls, db_session: Annotated[AsyncSession, Depends(get_db_session)]) -> "AuctionService":
+    def create(cls, db_session: Annotated[AsyncSession, Depends(get_db_session, scope="function")]) -> "AuctionService":
         """세션을 공유하는 서비스 인스턴스 생성"""
         return cls(
             repository=AuctionRepository(db_session),
