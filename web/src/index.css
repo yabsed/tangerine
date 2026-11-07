@@ -1,0 +1,177 @@
+@import "tailwindcss";
+
+/* ============================================
+   디자인 토큰 (Design Tokens)
+   ============================================ */
+:root {
+  /* Brand Colors */
+  --color-brand: #ff6f0f;
+  --color-brand-hover: #e65f00;
+  --color-brand-nav: var(--color-brand);
+
+  /* Semantic Colors - Backgrounds */
+  --bg-page: #ffffff;           /* 전체 페이지 배경 */
+  --bg-box: #f3f4f6;            /* 입력창, 카드 등 컨텐츠 박스 배경 (gray-100) */
+  --bg-box-hover: #e5e7eb;      /* 박스 호버 상태 (gray-200) */
+  --bg-box-light: #f9fafb;      /* 매우 밝은 박스 배경 (gray-50) - 버튼/검색창 배경으로 사용 */
+  --bg-box-alt: #f8f9fa;        /* 대체 박스 배경 */
+  --bg-secondary: #f0f0f0;      /* 보조 배경 (프로필 섹션 등) */
+  --bg-elevated: #ffffff;       /* 떠있는 요소 배경 (모달, 상태 메시지 등) */
+  --bg-base: #f5f5f5;           /* 기본 배경 (채팅방 등) */
+  --bg-overlay: rgba(0, 0, 0, 0.5); /* 오버레이 배경 */
+
+  /* Semantic Colors - Text */
+  --text-primary: #1e293b;      /* 주 텍스트 (slate-800) */
+  --text-heading: #0f172a;      /* 제목 텍스트 (slate-900) */
+  --text-body: #334155;         /* 본문 텍스트 (slate-700) */
+  --text-secondary: #64748b;    /* 보조 텍스트 (slate-500) */
+  --text-tertiary: #6b7280;     /* 3차 텍스트 (gray-500) */
+  --text-muted: #9ca3af;        /* 약한 텍스트 (gray-400) */
+  --text-disabled: #d1d5db;     /* 비활성 텍스트 (gray-300) */
+  --text-inverse: #ffffff;      /* 반전 텍스트 (버튼 등) */
+  --text-placeholder: #9ca3af;  /* placeholder 텍스트 (gray-400) */
+
+  /* Semantic Colors - Borders (가독성을 위해 전체적으로 한 단계 진하게 변경) */
+  --border-light: #e5e7eb;      /* 매우 밝은 테두리 (gray-200) - 기존 gray-100에서 변경 */
+  --border-base: #d1d5db;       /* 기본 테두리 (gray-300) - 기존 gray-200에서 변경 (카드, 검색창 등) */
+  --border-medium: #9ca3af;     /* 중간 테두리 (gray-400) - 기존 gray-300에서 변경 */
+  --border-dark: #6b7280;       /* 진한 테두리 (gray-500) - 기존 gray-400에서 변경 */
+
+  /* Semantic Colors - Status */
+  --status-error: #ef4444;      /* 에러 (red-500) */
+  --status-error-light: #fee2e2; /* 에러 연한 배경 (red-100) */
+  --status-error-hover: #fef2f2; /* 에러 호버 배경 (red-50) */
+  --status-success: #10b981;    /* 성공 (green-500) */
+  --status-success-light: #d1fae5; /* 성공 연한 배경 (green-100) */
+  --status-success-text: #047857; /* 성공 텍스트 (green-700) */
+  --status-warning: #f59e0b;    /* 경고 (amber-500) */
+  --status-warning-light: #fef3c7; /* 경고 연한 배경 (yellow-100) */
+  --status-warning-text: #a16207; /* 경고 텍스트 (yellow-700) */
+  --status-info: #3b82f6;       /* 정보 (blue-500) */
+
+  /* Primary Light (브랜드 색상 연한 버전) */
+  --color-brand-light: #fff7ed; /* 브랜드 연한 배경 (orange-50) */
+  --color-brand-light-hover: #ffedd5; /* 브랜드 연한 호버 (orange-100) */
+
+  /* Fonts */
+  --font-display: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* ============================================
+   Tailwind Theme 매핑
+   ============================================ */
+@theme {
+  /* Brand Colors */
+  --color-primary: var(--color-brand);
+  --color-primary-hover: var(--color-brand-hover);
+
+  /* Background Colors */
+  --color-bg-page: var(--bg-page);
+  --color-bg-box: var(--bg-box);
+  --color-bg-box-hover: var(--bg-box-hover);
+  --color-bg-box-light: var(--bg-box-light);
+  --color-bg-box-alt: var(--bg-box-alt);
+  --color-bg-secondary: var(--bg-secondary);
+  --color-bg-elevated: var(--bg-elevated);
+  --color-bg-base: var(--bg-base);
+  --color-bg-overlay: var(--bg-overlay);
+
+  /* Text Colors */
+  --color-text-primary: var(--text-primary);
+  --color-text-heading: var(--text-heading);
+  --color-text-body: var(--text-body);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+  --color-text-muted: var(--text-muted);
+  --color-text-disabled: var(--text-disabled);
+  --color-text-inverse: var(--text-inverse);
+  --color-text-placeholder: var(--text-placeholder);
+
+  /* Border Colors */
+  --color-border-light: var(--border-light);
+  --color-border-base: var(--border-base);
+  --color-border-medium: var(--border-medium);
+  --color-border-dark: var(--border-dark);
+
+  /* Status Colors */
+  --color-status-error: var(--status-error);
+  --color-status-error-light: var(--status-error-light);
+  --color-status-error-hover: var(--status-error-hover);
+  --color-status-success: var(--status-success);
+  --color-status-success-light: var(--status-success-light);
+  --color-status-success-text: var(--status-success-text);
+  --color-status-warning: var(--status-warning);
+  --color-status-warning-light: var(--status-warning-light);
+  --color-status-warning-text: var(--status-warning-text);
+  --color-status-info: var(--status-info);
+
+  /* Primary Light */
+  --color-primary-light: var(--color-brand-light);
+  --color-primary-light-hover: var(--color-brand-light-hover);
+
+  /* Font */
+  --font-display: var(--font-display);
+}
+
+/* ============================================
+   Dark Mode
+   ============================================ */
+.dark {
+  /* Brand Colors - 다크모드에서도 동일 */
+  --color-brand: #ff6f0f;
+  --color-brand-hover: #ff8534;
+  --color-brand-nav: var(--color-brand);
+
+  /* Background Colors */
+  --bg-page: #1a1a1a;
+  --bg-box: #262626;
+  --bg-box-hover: #303030;
+  --bg-box-light: #222222;     /* 다크모드에서는 밝은 회색 대신 어두운 회색 */
+  --bg-box-alt: #242424;
+  --bg-secondary: #2a2a2a;
+  --bg-elevated: #333333;
+  --bg-base: #1f1f1f;
+  --bg-overlay: rgba(0, 0, 0, 0.7);
+
+  /* Text Colors */
+  --text-primary: #f5f5f5;
+  --text-heading: #ffffff;
+  --text-body: #e0e0e0;
+  --text-secondary: #b3b3b3;
+  --text-tertiary: #999999;
+  --text-muted: #808080;
+  --text-disabled: #5c5c5c;
+  --text-inverse: #ffffff;
+  --text-placeholder: #808080;
+
+  /* Border Colors - 배경색과 확실히 구분되도록 명도 상향 */
+  --border-light: #404040;      /* neutral-700 */
+  --border-base: #525252;       /* neutral-600 (기존 #3a3a3a 대비 훨씬 잘 보임) */
+  --border-medium: #737373;     /* neutral-500 */
+  --border-dark: #a3a3a3;       /* neutral-400 */
+
+  /* Status Colors */
+  --status-error: #f87171;
+  --status-error-light: rgba(239, 68, 68, 0.2);   /* red-500/20 */
+  --status-error-hover: rgba(239, 68, 68, 0.1);   /* red-500/10 */
+  --status-success: #34d399;
+  --status-success-light: rgba(16, 185, 129, 0.2); /* green-500/20 */
+  --status-success-text: #6ee7b7;                  /* green-300 */
+  --status-warning: #fbbf24;
+  --status-warning-light: rgba(245, 158, 11, 0.2); /* amber-500/20 */
+  --status-warning-text: #fcd34d;                  /* yellow-300 */
+  --status-info: #60a5fa;
+
+  /* Primary Light */
+  --color-brand-light: rgba(255, 111, 15, 0.15);   /* brand/15 */
+  --color-brand-light-hover: rgba(255, 111, 15, 0.25); /* brand/25 */
+}
+
+/* ============================================
+   Global Styles
+   ============================================ */
+body {
+  @apply bg-bg-page text-text-primary antialiased;
+  font-family: var(--font-display);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
